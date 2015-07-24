@@ -8,3 +8,4 @@ zope.cachedescriptors
 unittest2
 ordereddict
 nose_extra_tools
+importlib
