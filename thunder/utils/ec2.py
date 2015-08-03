@@ -234,6 +234,16 @@ def install_thunder(master, opts):
     print_success()
 
 
+def install_nipy(master, opts):
+    """Install NIPY components on a Spark EC2 cluster"""
+    print_status("Installing NIPY")
+
+    # Install components
+    ssh(master, opts, "source ~/.bash_profile && pip install nitime")
+    ssh(master, opts, "pssh -h /root/spark-ec2/slaves 'source ~/.bash_profile && pip install nitime'")
+
+    print_success()
+
 def configure_spark(master, opts):
     """ Configure Spark with useful settings for running Thunder """
     print_status("Configuring Spark for Thunder")
@@ -518,6 +528,8 @@ if __name__ == "__main__":
         install_anaconda(master, opts)
         install_thunder(master, opts)
         configure_spark(master, opts)
+        if os.environ['THUNDER_INSTALL_NIPY'] == 'true':  # install nipy on cluster if env var is set to true
+            install_nipy(master, opts)
 
         print("")
         print("Cluster successfully launched!")
@@ -590,6 +602,9 @@ if __name__ == "__main__":
             #install_anaconda(master, opts)
             install_thunder(master, opts)
             configure_spark(master, opts)
+
+        elif action == "install-nipy":
+            install_nipy(master, opts)
 
         # Stop a running cluster.  Storage on EBS volumes is
         # preserved, so you can restart the cluster in the same state
