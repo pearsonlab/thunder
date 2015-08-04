@@ -239,9 +239,13 @@ def install_nipy(master, opts):
     """Install NIPY components on a Spark EC2 cluster"""
     print_status("Installing NIPY")
 
-    # Install components
+    # Install components to master
     ssh(master, opts, "source ~/.bash_profile && pip install nitime")
+    ssh(master, opts, "source ~/.bash_profile && pip install nibabel")
+
+    # Install components to slaves
     ssh(master, opts, "pssh -h /root/spark-ec2/slaves 'source ~/.bash_profile && pip install nitime'")
+    ssh(master, opts, "pssh -h /root/spark-ec2/slaves 'source ~/.bash_profile && pip install nibabel'")
 
     print_success()
 
