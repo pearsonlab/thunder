@@ -241,10 +241,11 @@ def install_nipy(master, opts):
     # Install components to master
     ssh(master, opts, "source ~/.bash_profile && pip install nitime")
     ssh(master, opts, "source ~/.bash_profile && pip install nibabel")
+    ssh(master, opts, "wget -O- http://neuro.debian.net/lists/precise.us-tn.full | sudo tee /etc/apt/sources.list.d/neurodebian.sources.list")
+    ssh(master, opts, "sudo apt-key adv --recv-keys --keyserver hkp://pgp.mit.edu:80 0xA5D32F012649A5A9")
+    ssh(master, opts, "sudo apt-get update")
+    ssh(master, opts, "sudo apt-get install fsl-5.0-core")
 
-    # Install components to slaves
-    ssh(master, opts, "pssh -h /root/spark-ec2/slaves 'source ~/.bash_profile && pip install nitime'")
-    ssh(master, opts, "pssh -h /root/spark-ec2/slaves 'source ~/.bash_profile && pip install nibabel'")
 
     print_success()
 
