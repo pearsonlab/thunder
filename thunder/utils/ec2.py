@@ -237,15 +237,25 @@ def install_thunder(master, opts):
 
 def install_nipy(master, opts):
     """Install NIPY components on a Spark EC2 cluster"""
-    print_status("Installing NIPY")
 
-    # Install components to master
+    # Install Python components to master
+    print_status("Installing Python Components of NiPy")
     ssh(master, opts, "source ~/.bash_profile && pip install nitime")
     ssh(master, opts, "source ~/.bash_profile && pip install nibabel")
-    ssh(master, opts, "wget -O- http://neuro.debian.net/lists/precise.us-tn.full | sudo tee /etc/apt/sources.list.d/neurodebian.sources.list")
-    ssh(master, opts, "sudo apt-key adv --recv-keys --keyserver hkp://pgp.mit.edu:80 0xA5D32F012649A5A9")
-    ssh(master, opts, "sudo apt-get update")
-    ssh(master, opts, "sudo apt-get install fsl-5.0-core")
+    ssh(master, opts, "source ~/.bash_profile && pip install nipype")
+
+    # Install FSL to master and slaves
+    print_status("Downloading FSL Installer")
+    ssh(master, opts, "mkdir -p /root/tmp/")
+    ssh(master, opts, "curl -o /root/tmp/fslinstaller.py 'https://raw.githubusercontent.com/pearsonlab/fslinstaller/master/fslinstaller.py'")
+    ssh(master, opts, "pssh -h /root/spark-ec2/slaves 'mkdir -p /root/tmp/'")
+    ssh(master, opts, "/root/spark-ec2/copy-dir /root/tmp/fslinstaller.py")
+
+    print_status("Installing FSL to master (May take up to 20 mins)")
+    ssh(master, opts, "source ~/.bash_profile && sudo python /root/tmp/fslinstaller.py -q")
+
+    print_status("Installing FSL to slaves (May take up to 20 mins)")
+    ssh(master, opts, "pssh -h /root/spark-ec2/slaves 'source ~/.bash_profile && sudo python /root/tmp/fslinstaller.py -q'")
 
 
     print_success()
