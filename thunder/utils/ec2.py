@@ -528,8 +528,11 @@ if __name__ == "__main__":
         if spark_cluster_loose_version < LooseVersion(MINIMUM_SPARK_VERSION):
             raise ValueError("Requested cluster Spark version '%s' is less " % spark_version_string
                              + "than the minimum version required for Thunder, '%s'" % MINIMUM_SPARK_VERSION)
-
-    opts.ami = get_spark_ami(opts)  # "ami-3ecd0c56"\
+    if action == "ni-launch":
+        opts.ami = "ami-e164d18a" # customized 
+        print "NeuroImaging for Spark AMI: " + opts.ami
+    else:
+        opts.ami = get_spark_ami(opts)  # "ami-3ecd0c56"\
     # get version string as github commit hash if needed (mainly to support Spark release candidates)
     opts.spark_version = remap_spark_version_to_hash(spark_version_string)
 
@@ -565,8 +568,6 @@ if __name__ == "__main__":
         install_anaconda(master, opts)
         install_thunder(master, opts)
         configure_spark(master, opts)
-        if os.environ['THUNDER_INSTALL_NIPY'] == 'true':  # install nipy on cluster if env var is set to true
-            install_nipy(master, opts)
 
         print("")
         print("Cluster successfully launched!")
@@ -576,7 +577,44 @@ if __name__ == "__main__":
             print("Go to " + colored("http://%s:5080/ganglia" % master, 'blue') + " to view ganglia monitor")
         print("")
 
-    if action != "launch":
+    elif action == "ni-launch":
+        try:
+            conn = ec2.connect_to_region(opts.region)
+        except Exception as e:
+            print >> stderr, (e)
+            sys.exit(1)
+
+        if opts.zone == "":
+            opts.zone = random.choice(conn.get_all_zones()).name
+
+        if opts.resume:
+            (master_nodes, slave_nodes) = get_existing_cluster(conn, opts, cluster_name)
+        else:
+            (master_nodes, slave_nodes) = launch_cluster(conn, opts, cluster_name)
+
+        try:
+            wait_for_cluster(conn, opts.wait, master_nodes, slave_nodes)
+        except NameError:
+            if spark_home_loose_version >= LooseVersion("1.3.0"):
+                wait_for_cluster_state(cluster_instances=(master_nodes + slave_nodes),
+                                       cluster_state='ssh-ready', opts=opts, conn=conn)
+            else:
+                wait_for_cluster_state(cluster_instances=(master_nodes + slave_nodes),
+                                       cluster_state='ssh-ready', opts=opts)
+        print("")
+        setup_cluster(conn, master_nodes, slave_nodes, opts, True)
+        master = master_nodes[0].public_dns_name
+        configure_spark(master, opts)
+
+        print("")
+        print("Cluster successfully launched!")
+        print("")
+        print("Go to " + colored("http://%s:8080" % master, 'blue') + " to see the web UI for your cluster")
+        if opts.ganglia:
+            print("Go to " + colored("http://%s:5080/ganglia" % master, 'blue') + " to view ganglia monitor")
+        print("")
+
+    if action != "launch" and action != "ni-launch":
         conn = ec2.connect_to_region(opts.region)
         (master_nodes, slave_nodes) = get_existing_cluster(conn, opts, cluster_name)
         master = master_nodes[0].public_dns_name
