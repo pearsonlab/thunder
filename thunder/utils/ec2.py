@@ -529,9 +529,9 @@ if __name__ == "__main__":
             raise ValueError("Requested cluster Spark version '%s' is less " % spark_version_string
                              + "than the minimum version required for Thunder, '%s'" % MINIMUM_SPARK_VERSION)
     if action == "ni-launch":
-        opts.ami = "ami-e164d18a" # customized 
+        opts.ami = "ami-b5992fde" # customized 
         print "NeuroImaging for Spark AMI: " + opts.ami
-    else:
+    elif action == "launch":
         opts.ami = get_spark_ami(opts)  # "ami-3ecd0c56"\
     # get version string as github commit hash if needed (mainly to support Spark release candidates)
     opts.spark_version = remap_spark_version_to_hash(spark_version_string)
